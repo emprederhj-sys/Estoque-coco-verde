@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1a472a">
+<meta name="description" content="Sistema de controle de estoque de coco verde">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Coco Verde">
+<title>Estoque — Coco Verde</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;500;700&family=DM+Sans:wght@300;400;500&display=swap');
+:root{--verde:#1a472a;--verde-mid:#2d6a4f;--verde-light:#52b788;--verde-pale:#d8f3dc;--amarelo-pale:#fff3cd;--vermelho:#c1121f;--vermelho-pale:#ffe0e0;--texto:#1b2e1e;--texto-muted:#5a7a62;--borda:#c5ddc9;--card:#fff;--bg:#eef5ef}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--texto);min-height:100vh;padding-bottom:80px}
+/* HEADER */
+.header{background:var(--verde);color:#fff;padding:1.1rem 1.25rem 1rem;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(26,71,42,.2)}
+.header-top{display:flex;align-items:center;justify-content:space-between}
+.header-title{font-family:'Syne',sans-serif;font-size:19px;font-weight:700}
+.header-title span{color:#52b788}
+.header-sub{font-size:11px;opacity:.7;margin-top:2px}
+.header-right{display:flex;align-items:center;gap:8px}
+select.usuario{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;padding:5px 10px;border-radius:20px;font-size:13px;font-family:inherit;cursor:pointer}
+select.usuario option{background:var(--verde)}
+.som-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;width:34px;height:34px;border-radius:50%;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+/* ALERTA */
+.alerta{margin:.6rem 1rem 0;padding:11px 15px;border-radius:12px;font-size:13px;font-weight:500;display:none;animation:slideIn .2s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.alerta.success{background:var(--verde-pale);color:var(--verde);border:1px solid var(--verde-light)}
+.alerta.danger{background:var(--vermelho-pale);color:var(--vermelho);border:1px solid #f4a0a0}
+.alerta.warning{background:var(--amarelo-pale);color:#7a4f00;border:1px solid #f4c261}
+/* CARDS */
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:1rem 1rem 0}
+.card{background:var(--card);border-radius:14px;padding:.85rem .75rem;text-align:center;border:1px solid var(--borda)}
+.card-label{font-size:10px;color:var(--texto-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.card-value{font-family:'Syne',sans-serif;font-size:22px;font-weight:700}
+.azul{color:var(--verde-mid)}.verde{color:#2d6a4f}.vermelho{color:var(--vermelho)}
+/* PAINEL */
+.painel{background:var(--card);border-radius:16px;border:1px solid var(--borda);padding:1.2rem;margin:.75rem 1rem 0}
+.painel h3{font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--verde);margin-bottom:.85rem}
+/* FORM */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.form-group{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.form-group label{font-size:11px;color:var(--texto-muted);font-weight:500;text-transform:uppercase;letter-spacing:.4px}
+.form-group input,.form-group select,.form-group textarea{padding:10px 12px;border:1.5px solid var(--borda);border-radius:10px;font-size:14px;font-family:inherit;color:var(--texto);background:#fff;width:100%}
+.form-group textarea{resize:vertical;min-height:60px}
+/* BOTÕES */
+.btn{padding:9px 14px;border-radius:10px;border:1px solid var(--borda);background:var(--card);color:var(--texto);font-size:13px;font-family:inherit;cursor:pointer;font-weight:500}
+.btn-verde{background:var(--verde);color:#fff;border-color:var(--verde);width:100%;padding:13px;font-size:14px;border-radius:12px;margin-top:4px}
+.btn-vermelho{background:var(--vermelho);color:#fff;border-color:var(--vermelho);width:100%;padding:13px;font-size:14px;border-radius:12px;margin-top:4px}
+.btn-outline{background:transparent;color:var(--verde);border-color:var(--verde)}
+.btn-sec{padding:7px 13px;background:var(--bg);color:var(--texto-muted);border:1px solid var(--borda);border-radius:10px;font-size:12px;font-family:inherit;cursor:pointer}
+/* CAMERA */
+.cam-wrap{position:relative;width:100%;border-radius:12px;overflow:hidden;background:#000;aspect-ratio:4/3;margin-bottom:10px}
+#video{width:100%;height:100%;object-fit:cover;display:block}
+#canvas-overlay{position:absolute;top:0;left:0;width:100%;height:100%;cursor:crosshair;display:none}
+.cam-controles{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.contador-badge{display:inline-flex;align-items:center;gap:6px;background:var(--verde-pale);color:var(--verde);border:1px solid var(--verde-light);border-radius:20px;padding:6px 14px;font-size:14px;font-weight:700;margin-bottom:10px}
+.instrucao{background:var(--verde-pale);border:1px solid var(--verde-light);border-radius:10px;padding:10px 13px;font-size:12px;color:var(--verde);margin-bottom:10px;line-height:1.6}
+.status-cam{display:flex;align-items:center;gap:7px;padding:7px 11px;border-radius:9px;font-size:12px;margin-bottom:10px}
+.status-cam.on{background:var(--verde-pale);color:var(--verde);border:1px solid var(--verde-light)}
+.status-cam.off{background:#f5f5f5;color:var(--texto-muted);border:1px solid var(--borda)}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor;flex-shrink:0}
+.confirmar-box{background:var(--bg);border:1px solid var(--borda);border-radius:12px;padding:1rem;margin-top:10px;display:none}
+.confirmar-box h4{font-size:14px;font-weight:700;color:var(--verde);margin-bottom:.75rem}
+.confirmar-row{display:flex;gap:8px;margin-top:8px}
+/* METAS */
+.meta-item{display:flex;align-items:center;justify-content:space-between;padding:11px 12px;background:var(--bg);border-radius:10px;margin-bottom:8px;border:1px solid var(--borda)}
+.meta-nome{font-weight:500;font-size:13px}
+.meta-qtd{font-size:11px;color:var(--texto-muted);margin-top:2px}
+.badge{display:inline-block;padding:3px 11px;border-radius:20px;font-size:11px;font-weight:500}
+.badge-ok{background:var(--verde-pale);color:var(--verde)}
+.badge-wait{background:var(--amarelo-pale);color:#7a4f00}
+.badge-in{background:var(--verde-pale);color:var(--verde)}
+.badge-out{background:var(--vermelho-pale);color:var(--vermelho)}
+.min-bar{display:flex;align-items:center;gap:10px;padding:10px 13px;background:var(--amarelo-pale);border:1px solid #f4c261;border-radius:11px;margin-bottom:12px;flex-wrap:wrap}
+.min-bar label{font-size:12px;color:#7a4f00;font-weight:500}
+.min-bar input{width:70px;padding:5px 9px;border:1px solid #f4c261;border-radius:8px;background:#fff;font-size:14px;text-align:center;font-family:inherit}
+/* TABELA */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:7px 9px;border-bottom:1.5px solid var(--borda);color:var(--texto-muted);font-weight:500;font-size:10px;text-transform:uppercase;letter-spacing:.4px}
+td{padding:9px 9px;border-bottom:1px solid var(--borda);color:var(--texto);vertical-align:middle}
+.empty{text-align:center;padding:2rem;color:var(--texto-muted);font-size:13px}
+/* RESULTADO CAIXAS */
+.resultado-box{background:var(--verde-pale);border:1px solid var(--verde-light);border-radius:12px;padding:1rem;text-align:center;margin:10px 0}
+.resultado-num{font-family:'Syne',sans-serif;font-size:40px;font-weight:700;color:var(--verde)}
+.resultado-label{font-size:12px;color:var(--texto-muted);margin-top:2px}
+/* BOTTOM NAV */
+.bottom-nav{position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--borda);display:flex;z-index:200;box-shadow:0 -2px 10px rgba(0,0,0,.06)}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:9px 4px 13px;font-size:9px;color:var(--texto-muted);cursor:pointer;border:none;background:none;font-family:inherit;gap:3px;transition:color .2s}
+.nav-item.ativo{color:var(--verde)}
+.nav-icon{font-size:19px}
+/* SUB TABS */
+.sub-tabs{display:flex;gap:6px;margin-bottom:12px;overflow-x:auto}
+.sub-tab{padding:7px 14px;border-radius:20px;border:1px solid var(--borda);background:var(--bg);font-size:12px;color:var(--texto-muted);cursor:pointer;white-space:nowrap;font-family:inherit}
+.sub-tab.ativo{background:var(--verde-mid);color:#fff;border-color:var(--verde-mid)}
+@media(max-width:380px){.cards{grid-template-columns:1fr 1fr}.form-row{grid-template-columns:1fr}.card-value{font-size:18px}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="header-title">🥥 Coco <span>Verde</span></div>
+      <div class="header-sub" id="data-atual"></div>
+    </div>
+    <div class="header-right">
+      <select class="usuario" id="usuario"><option value="Dono">Dono</option><option value="Funcionário">Funcionário</option></select>
+      <button class="som-btn" id="som-btn" onclick="toggleMute()">🔔</button>
+    </div>
+  </div>
+</div>
+
+<div class="alerta" id="alerta"></div>
+
+<div class="cards">
+  <div class="card"><div class="card-label">Saldo</div><div class="card-value azul" id="saldo">0</div></div>
+  <div class="card"><div class="card-label">Entradas</div><div class="card-value verde" id="total-in">0</div></div>
+  <div class="card"><div class="card-label">Saídas</div><div class="card-value vermelho" id="total-out">0</div></div>
+</div>
+
+<!-- ABA ENTRADA -->
+<div id="tab-entrada" class="painel">
+  <h3>Registrar entrada</h3>
+  <div class="sub-tabs">
+    <button class="sub-tab ativo" onclick="showSubTab('manual')">✍️ Manual</button>
+    <button class="sub-tab" onclick="showSubTab('camera')">📷 Por câmera</button>
+    <button class="sub-tab" onclick="showSubTab('caixas')">📦 Por caixas</button>
+  </div>
+
+  <!-- MANUAL -->
+  <div id="sub-manual">
+    <div class="form-row">
+      <div class="form-group"><label>Quantidade</label><input type="number" id="in-qtd" min="1" placeholder="Ex: 1000" inputmode="numeric"></div>
+      <div class="form-group"><label>Fornecedor</label><input type="text" id="in-forn" placeholder="Nome"></div>
+    </div>
+    <div class="form-group"><label>Observação</label><textarea id="in-obs" placeholder="Ex: abastecimento depósito..."></textarea></div>
+    <button class="btn-verde" onclick="registrar('entrada')">Confirmar entrada</button>
+  </div>
+
+  <!-- CÂMERA -->
+  <div id="sub-camera" style="display:none">
+    <div class="instrucao">1. Inicie a câmera e aponte para a carga<br>2. Congele a imagem<br>3. Toque em cada coco para contar<br>4. Confirme a entrada no estoque</div>
+    <div id="status-cam" class="status-cam off"><div class="dot"></div><span id="status-txt">Câmera desligada</span></div>
+    <div class="cam-wrap">
+      <video id="video" autoplay playsinline muted></video>
+      <canvas id="canvas-overlay"></canvas>
+    </div>
+    <div class="cam-controles">
+      <button class="btn btn-outline" id="btn-iniciar" onclick="iniciarCamera()">Iniciar câmera</button>
+      <button class="btn" id="btn-trocar" onclick="trocarCamera()" style="display:none">🔄 Trocar</button>
+      <button class="btn" id="btn-congelar" onclick="congelarImagem()" style="display:none">❄️ Congelar</button>
+      <button class="btn" id="btn-limpar" onclick="limparContagem()" style="display:none">🗑️ Limpar</button>
+      <button class="btn" id="btn-retomar" onclick="retomarCamera()" style="display:none">▶️ Retomar</button>
+    </div>
+    <div class="contador-badge">🥥 <span id="contador-num">0</span> cocos contados</div>
+    <div class="confirmar-box" id="confirmar-cam">
+      <h4>Registrar no estoque</h4>
+      <div class="form-row">
+        <div class="form-group"><label>Quantidade</label><input type="number" id="qtd-cam" min="1"></div>
+        <div class="form-group"><label>Fornecedor</label><input type="text" id="forn-cam" placeholder="Nome"></div>
+      </div>
+      <div class="form-group"><label>Observação</label><input type="text" id="obs-cam" placeholder="Ex: carga da manhã"></div>
+      <div class="confirmar-row">
+        <button class="btn btn-outline" style="flex:1" onclick="confirmarEntrada('camera')">Confirmar entrada</button>
+        <button class="btn" onclick="document.getElementById('confirmar-cam').style.display='none'">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CAIXAS -->
+  <div id="sub-caixas" style="display:none">
+    <div class="instrucao">Informe o tipo e quantidade de volumes. O sistema calcula o total automaticamente.</div>
+    <div class="form-group"><label>Tipo de embalagem</label>
+      <select id="tipo-emb" style="padding:10px 12px;border:1.5px solid var(--borda);border-radius:10px;font-size:14px;font-family:inherit;color:var(--texto);background:#fff;width:100%" onchange="calcularCaixas()">
+        <option value="">Selecione...</option>
+        <option value="30">Caixa padrão (~30 cocos)</option>
+        <option value="50">Bag grande (~50 cocos)</option>
+        <option value="20">Saca pequena (~20 cocos)</option>
+        <option value="custom">Média personalizada</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Qtd de volumes</label><input type="number" id="num-vol" min="1" placeholder="Ex: 20" inputmode="numeric" oninput="calcularCaixas()"></div>
+      <div class="form-group" id="grupo-media" style="display:none"><label>Média por volume</label><input type="number" id="media-vol" min="1" placeholder="Ex: 35" inputmode="numeric" oninput="calcularCaixas()"></div>
+    </div>
+    <div class="resultado-box" id="resultado-box" style="display:none">
+      <div class="resultado-num" id="resultado-total">0</div>
+      <div class="resultado-label">cocos estimados no total</div>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label>Qtd total</label><input type="number" id="qtd-caixas" min="1" placeholder="0" inputmode="numeric"></div>
+      <div class="form-group"><label>Fornecedor</label><input type="text" id="forn-caixas" placeholder="Nome"></div>
+    </div>
+    <div class="form-group"><label>Observação</label><input type="text" id="obs-caixas" placeholder="Ex: 20 caixas padrão"></div>
+    <button class="btn-verde" onclick="confirmarEntrada('caixas')">Confirmar entrada</button>
+  </div>
+</div>
+
+<!-- ABA SAÍDA -->
+<div id="tab-saida" class="painel" style="display:none">
+  <h3>Registrar saída</h3>
+  <div class="form-row">
+    <div class="form-group"><label>Quantidade</label><input type="number" id="out-qtd" min="1" placeholder="Ex: 50" inputmode="numeric"></div>
+    <div class="form-group"><label>Destino / Cliente</label><input type="text" id="out-dest" placeholder="Ex: feira"></div>
+  </div>
+  <div class="form-group"><label>Observação</label><textarea id="out-obs" placeholder="Ex: pedido do João..."></textarea></div>
+  <button class="btn-vermelho" onclick="registrar('saida')">Confirmar saída</button>
+</div>
+
+<!-- ABA METAS -->
+<div id="tab-metas" class="painel" style="display:none">
+  <h3>Metas e alertas</h3>
+  <div class="min-bar">
+    <label>Estoque mínimo:</label>
+    <input type="number" id="min-val" value="50" min="1" inputmode="numeric" onchange="salvarMin()">
+    <span style="font-size:12px;color:#7a4f00">cocos — alerta de estoque baixo</span>
+  </div>
+  <div id="meta-list"></div>
+  <div class="form-row" style="margin-top:12px">
+    <div class="form-group"><label>Nome da meta</label><input type="text" id="meta-nome" placeholder="Ex: Depósito cheio"></div>
+    <div class="form-group"><label>Quantidade alvo</label><input type="number" id="meta-qtd" placeholder="Ex: 1000" inputmode="numeric"></div>
+  </div>
+  <button class="btn-verde" onclick="addMeta()">Adicionar meta</button>
+</div>
+
+<!-- ABA HISTÓRICO -->
+<div id="tab-historico" class="painel" style="display:none">
+  <h3>Histórico</h3>
+  <div style="display:flex;gap:8px;margin-bottom:1rem;flex-wrap:wrap;align-items:center">
+    <select id="filtro" onchange="renderHistorico()" style="padding:7px 11px;border:1.5px solid var(--borda);border-radius:10px;font-size:12px;background:#fff;color:var(--texto);font-family:inherit">
+      <option value="todos">Todos</option><option value="entrada">Entradas</option><option value="saida">Saídas</option>
+    </select>
+    <button class="btn-sec" onclick="exportar()">📊 Exportar CSV</button>
+    <button class="btn-sec" style="color:var(--vermelho);border-color:#f4a0a0" onclick="limparHistorico()">🗑️ Limpar</button>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Data/Hora</th><th>Tipo</th><th>Qtd</th><th>Detalhe</th><th>Usuário</th></tr></thead>
+      <tbody id="tabela-body"></tbody>
+    </table>
+    <div id="tabela-empty" class="empty" style="display:none">Nenhum registro ainda.</div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-item ativo" onclick="showTab('entrada')" id="nav-entrada"><span class="nav-icon">📥</span>Entrada</button>
+  <button class="nav-item" onclick="showTab('saida')" id="nav-saida"><span class="nav-icon">📤</span>Saída</button>
+  <button class="nav-item" onclick="showTab('metas')" id="nav-metas"><span class="nav-icon">🎯</span>Metas</button>
+  <button class="nav-item" onclick="showTab('historico')" id="nav-historico"><span class="nav-icon">📋</span>Histórico</button>
+</nav>
+
+<script>
+// ===== STORAGE & ESTADO =====
+var KEY='coco_v3',KEY_METAS='coco_metas_v3',KEY_MUTE='coco_mute',KEY_MIN='coco_min';
+var audioCtx=null,mutado=false,metasAlertadas={},alertTimer=null,alertQ=[],showingA=false;
+var streamAtual=null,facingMode='environment',congelado=false,contagem=0,pontos=[],snapImg=null;
+var canvas=document.getElementById('canvas-overlay');
+var video=document.getElementById('video');
+var ctx2d=canvas.getContext('2d');
+
+// ===== SOM =====
+function getCtx(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();return audioCtx;}
+function tocar(tipo){
+  if(mutado)return;
+  try{
+    var c=getCtx();
+    var s={zero:[{f:200,t:0,d:.5},{f:160,t:.55,d:.5},{f:130,t:1.1,d:.7}],min:[{f:440,t:0,d:.3},{f:440,t:.35,d:.3},{f:330,t:.7,d:.5}],meta:[{f:523,t:0,d:.22},{f:659,t:.27,d:.22},{f:784,t:.54,d:.22},{f:1047,t:.81,d:.55}]};
+    (s[tipo]||s.meta).forEach(function(n){var o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=n.f;o.type='sine';var st=c.currentTime+n.t;g.gain.setValueAtTime(.4,st);g.gain.exponentialRampToValueAtTime(.001,st+n.d);o.start(st);o.stop(st+n.d+.05);});
+  }catch(e){}
+}
+function toggleMute(){mutado=!mutado;localStorage.setItem(KEY_MUTE,mutado?'1':'0');document.getElementById('som-btn').textContent=mutado?'🔕':'🔔';mostrarAlerta(mutado?'🔕 Som silenciado':'🔔 Som reativado',mutado?'warning':'success',2000);}
+
+// ===== DADOS =====
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||[];}catch(e){return[];}}
+function save(d){localStorage.setItem(KEY,JSON.stringify(d));}
+function loadMetas(){try{return JSON.parse(localStorage.getItem(KEY_METAS))||[];}catch(e){return[];}}
+function saveMetas(m){localStorage.setItem(KEY_METAS,JSON.stringify(m));}
+function getMin(){return parseInt(localStorage.getItem(KEY_MIN))||50;}
+function salvarMin(){localStorage.setItem(KEY_MIN,parseInt(document.getElementById('min-val').value)||50);}
+function calcSaldo(d){return d.reduce(function(a,r){return a+(r.tipo==='entrada'?r.qtd:-r.qtd);},0);}
+function calcIn(d){return d.filter(function(r){return r.tipo==='entrada';}).reduce(function(a,r){return a+r.qtd;},0);}
+function calcOut(d){return d.filter(function(r){return r.tipo==='saida';}).reduce(function(a,r){return a+r.qtd;},0);}
+
+// ===== ALERTAS =====
+function verificarAlertas(saldo){
+  var min=getMin();
+  if(saldo<=0){tocar('zero');mostrarAlerta('⚠️ ESTOQUE ZERADO! Providencie reposição urgente.','danger',6000);return;}
+  if(saldo<=min){tocar('min');mostrarAlerta('⚠️ Estoque baixo! Apenas '+saldo+' cocos (mínimo: '+min+').','warning',5000);}
+  loadMetas().forEach(function(m){var k=m.id+'_'+m.qtd;if(saldo>=m.qtd&&!metasAlertadas[k]){metasAlertadas[k]=true;tocar('meta');mostrarAlerta('🎯 Meta atingida: "'+m.nome+'" — '+m.qtd+' cocos!','success',5000);}});
+}
+function updateCards(){var d=load();document.getElementById('saldo').textContent=calcSaldo(d);document.getElementById('total-in').textContent=calcIn(d);document.getElementById('total-out').textContent=calcOut(d);}
+function mostrarAlerta(msg,tipo,dur){alertQ.push({msg:msg,tipo:tipo,dur:dur||3000});if(!showingA)proximoAlerta();}
+function proximoAlerta(){if(!alertQ.length){showingA=false;return;}showingA=true;var a=alertQ.shift(),el=document.getElementById('alerta');el.textContent=a.msg;el.className='alerta '+a.tipo;el.style.display='block';if(alertTimer)clearTimeout(alertTimer);alertTimer=setTimeout(function(){el.style.display='none';showingA=false;proximoAlerta();},a.dur);}
+
+// ===== NAVEGAÇÃO =====
+function showTab(tab){
+  ['entrada','saida','metas','historico'].forEach(function(t){
+    document.getElementById('tab-'+t).style.display=t===tab?'block':'none';
+    document.getElementById('nav-'+t).classList.toggle('ativo',t===tab);
+  });
+  if(tab==='historico')renderHistorico();
+  if(tab==='metas'){renderMetas();document.getElementById('min-val').value=getMin();}
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function showSubTab(sub){
+  ['manual','camera','caixas'].forEach(function(s){document.getElementById('sub-'+s).style.display=s===sub?'block':'none';});
+  document.querySelectorAll('.sub-tab').forEach(function(b,i){b.classList.toggle('ativo',['manual','camera','caixas'][i]===sub);});
+  if(sub!=='camera'&&streamAtual){streamAtual.getTracks().forEach(function(t){t.stop();});streamAtual=null;setStatus(false,'Câmera desligada');}
+}
+
+// ===== REGISTROS =====
+function registrar(tipo){
+  var d=load(),u=document.getElementById('usuario').value;
+  if(tipo==='entrada'){
+    var q=parseInt(document.getElementById('in-qtd').value)||0,f=document.getElementById('in-forn').value.trim();
+    if(q<=0){mostrarAlerta('Informe uma quantidade válida.','danger',3000);return;}
+    d.push({tipo:'entrada',qtd:q,detalhe:f||'—',obs:document.getElementById('in-obs').value.trim(),usuario:u,data:new Date().toLocaleString('pt-BR')});
+    document.getElementById('in-qtd').value='';document.getElementById('in-forn').value='';document.getElementById('in-obs').value='';
+    save(d);updateCards();mostrarAlerta('✅ Entrada de '+q+' cocos registrada!','success',3000);verificarAlertas(calcSaldo(d));
+  }else{
+    var q2=parseInt(document.getElementById('out-qtd').value)||0,dest=document.getElementById('out-dest').value.trim(),s=calcSaldo(d);
+    if(q2<=0){mostrarAlerta('Informe uma quantidade válida.','danger',3000);return;}
+    if(q2>s){mostrarAlerta('❌ Saldo insuficiente! Saldo atual: '+s+' cocos.','danger',4000);tocar('zero');return;}
+    d.push({tipo:'saida',qtd:q2,detalhe:dest||'—',obs:document.getElementById('out-obs').value.trim(),usuario:u,data:new Date().toLocaleString('pt-BR')});
+    document.getElementById('out-qtd').value='';document.getElementById('out-dest').value='';document.getElementById('out-obs').value='';
+    save(d);updateCards();mostrarAlerta('✅ Saída de '+q2+' cocos registrada!','success',3000);verificarAlertas(calcSaldo(d));
+  }
+}
+
+function confirmarEntrada(origem){
+  var d=load(),u=document.getElementById('usuario').value,qtd=0,forn='',obs='';
+  if(origem==='camera'){qtd=parseInt(document.getElementById('qtd-cam').value)||0;forn=document.getElementById('forn-cam').value.trim();obs=document.getElementById('obs-cam').value.trim()||'Contagem por câmera';}
+  else{qtd=parseInt(document.getElementById('qtd-caixas').value)||0;forn=document.getElementById('forn-caixas').value.trim();obs=document.getElementById('obs-caixas').value.trim()||'Contagem por volumes';}
+  if(qtd<=0){mostrarAlerta('Informe uma quantidade válida.','danger',3000);return;}
+  d.push({tipo:'entrada',qtd:qtd,detalhe:forn||'—',obs:obs,usuario:u,data:new Date().toLocaleString('pt-BR')});
+  save(d);updateCards();mostrarAlerta('✅ '+qtd+' cocos registrados no estoque!','success',3000);verificarAlertas(calcSaldo(d));
+  if(origem==='camera'){pontos=[];contagem=0;atualizarContador();document.getElementById('confirmar-cam').style.display='none';document.getElementById('forn-cam').value='';document.getElementById('obs-cam').value='';retomarCamera();}
+  else{document.getElementById('num-vol').value='';document.getElementById('media-vol').value='';document.getElementById('qtd-caixas').value='';document.getElementById('forn-caixas').value='';document.getElementById('obs-caixas').value='';document.getElementById('resultado-box').style.display='none';document.getElementById('tipo-emb').value='';}
+}
+
+// ===== CÂMERA =====
+function setStatus(on,txt){var el=document.getElementById('status-cam');el.className='status-cam '+(on?'on':'off');document.getElementById('status-txt').textContent=txt;}
+
+async function iniciarCamera(){
+  try{
+    if(streamAtual)streamAtual.getTracks().forEach(function(t){t.stop();});
+    var stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:facingMode,width:{ideal:1280},height:{ideal:960}}});
+    streamAtual=stream;video.srcObject=stream;video.style.display='block';canvas.style.display='none';
+    setStatus(true,'Câmera ativa — aponte para a carga');
+    document.getElementById('btn-iniciar').style.display='none';
+    document.getElementById('btn-trocar').style.display='inline-flex';
+    document.getElementById('btn-congelar').style.display='inline-flex';
+    congelado=false;pontos=[];contagem=0;atualizarContador();
+    document.getElementById('confirmar-cam').style.display='none';
+  }catch(e){mostrarAlerta('❌ Não foi possível acessar a câmera. Verifique as permissões.','danger',4000);}
+}
+
+function trocarCamera(){facingMode=facingMode==='environment'?'user':'environment';iniciarCamera();}
+
+function congelarImagem(){
+  if(!streamAtual)return;
+  canvas.width=video.videoWidth||640;canvas.height=video.videoHeight||480;
+  ctx2d.drawImage(video,0,0,canvas.width,canvas.height);
+  snapImg=ctx2d.getImageData(0,0,canvas.width,canvas.height);
+  video.style.display='none';canvas.style.display='block';congelado=true;pontos=[];contagem=0;atualizarContador();
+  setStatus(true,'Imagem congelada — toque em cada coco para contar');
+  document.getElementById('btn-congelar').style.display='none';
+  document.getElementById('btn-limpar').style.display='inline-flex';
+  document.getElementById('btn-retomar').style.display='inline-flex';
+  canvas.onclick=function(e){
+    if(!congelado)return;
+    var r=canvas.getBoundingClientRect(),sx=canvas.width/r.width,sy=canvas.height/r.height;
+    var x=(e.clientX-r.left)*sx,y=(e.clientY-r.top)*sy;
+    pontos.push({x:x,y:y});contagem++;desenharPontos();atualizarContador();
+    if(contagem>0){document.getElementById('confirmar-cam').style.display='block';document.getElementById('qtd-cam').value=contagem;}
+  };
+}
+
+function desenharPontos(){
+  if(snapImg)ctx2d.putImageData(snapImg,0,0);
+  pontos.forEach(function(p,i){
+    ctx2d.beginPath();ctx2d.arc(p.x,p.y,16,0,2*Math.PI);
+    ctx2d.fillStyle='rgba(26,71,42,0.4)';ctx2d.fill();
+    ctx2d.strokeStyle='#52b788';ctx2d.lineWidth=2.5;ctx2d.stroke();
+    ctx2d.fillStyle='#fff';ctx2d.font='bold 12px sans-serif';ctx2d.textAlign='center';ctx2d.textBaseline='middle';
+    ctx2d.fillText(i+1,p.x,p.y);
+  });
+}
+
+function limparContagem(){pontos=[];contagem=0;if(snapImg)ctx2d.putImageData(snapImg,0,0);atualizarContador();document.getElementById('confirmar-cam').style.display='none';}
+function retomarCamera(){congelado=false;canvas.onclick=null;video.style.display='block';canvas.style.display='none';pontos=[];contagem=0;atualizarContador();setStatus(true,'Câmera ativa — aponte para a carga');document.getElementById('btn-congelar').style.display='inline-flex';document.getElementById('btn-limpar').style.display='none';document.getElementById('btn-retomar').style.display='none';document.getElementById('confirmar-cam').style.display='none';}
+function atualizarContador(){document.getElementById('contador-num').textContent=contagem;}
+
+// ===== CAIXAS =====
+function calcularCaixas(){
+  var tipo=document.getElementById('tipo-emb').value,num=parseInt(document.getElementById('num-vol').value)||0;
+  var grp=document.getElementById('grupo-media'),media=0;
+  if(tipo==='custom'){grp.style.display='flex';media=parseInt(document.getElementById('media-vol').value)||0;}
+  else{grp.style.display='none';media=parseInt(tipo)||0;}
+  var total=num*media,rb=document.getElementById('resultado-box');
+  if(total>0){rb.style.display='block';document.getElementById('resultado-total').textContent=total;document.getElementById('qtd-caixas').value=total;}
+  else{rb.style.display='none';}
+}
+
+// ===== METAS =====
+function addMeta(){var n=document.getElementById('meta-nome').value.trim(),q=parseInt(document.getElementById('meta-qtd').value)||0;if(!n||q<=0){mostrarAlerta('Preencha nome e quantidade da meta.','danger',3000);return;}var m=loadMetas();m.push({id:Date.now(),nome:n,qtd:q});saveMetas(m);document.getElementById('meta-nome').value='';document.getElementById('meta-qtd').value='';renderMetas();mostrarAlerta('🎯 Meta "'+n+'" adicionada!','success',2000);}
+function removeMeta(id){saveMetas(loadMetas().filter(function(m){return m.id!==id;}));renderMetas();}
+function renderMetas(){var m=loadMetas(),s=calcSaldo(load()),el=document.getElementById('meta-list');if(!m.length){el.innerHTML='<div class="empty">Nenhuma meta ainda.</div>';return;}el.innerHTML=m.map(function(mt){var ok=s>=mt.qtd;return'<div class="meta-item"><div><div class="meta-nome">'+mt.nome+'</div><div class="meta-qtd">Alerta ao atingir '+mt.qtd+' cocos</div></div><div style="display:flex;align-items:center;gap:8px"><span class="badge '+(ok?'badge-ok':'badge-wait')+'">'+(ok?'✅ Atingida':'⏳ Aguardando')+'</span><button class="btn-sec" style="color:var(--vermelho)" onclick="removeMeta('+mt.id+')">Remover</button></div></div>';}).join('');}
+
+// ===== HISTÓRICO =====
+function renderHistorico(){var d=load(),f=document.getElementById('filtro').value,lista=(f==='todos'?d:d.filter(function(r){return r.tipo===f;})).slice().reverse(),tb=document.getElementById('tabela-body'),em=document.getElementById('tabela-empty');if(!lista.length){tb.innerHTML='';em.style.display='block';return;}em.style.display='none';tb.innerHTML=lista.map(function(r){return'<tr><td style="font-size:10px;white-space:nowrap">'+r.data+'</td><td><span class="badge badge-'+(r.tipo==='entrada'?'in':'out')+'">'+(r.tipo==='entrada'?'Entrada':'Saída')+'</span></td><td><strong>'+r.qtd+'</strong></td><td>'+r.detalhe+'</td><td>'+r.usuario+'</td></tr>';}).join('');}
+function exportar(){var d=load();if(!d.length){mostrarAlerta('Nenhum dado para exportar.','danger',3000);return;}var csv='Data,Tipo,Qtd,Detalhe,Obs,Usuário\n'+d.map(function(r){return['"'+r.data+'"',r.tipo,r.qtd,'"'+(r.detalhe||'')+'\"','"'+(r.obs||'')+'\"',r.usuario].join(',');}).join('\n');var a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent('\uFEFF'+csv);a.download='estoque_coco_'+new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')+'.csv';a.click();}
+function limparHistorico(){if(!confirm('Limpar todo o histórico? Esta ação não pode ser desfeita.'))return;save([]);updateCards();renderHistorico();mostrarAlerta('Histórico limpo.','success',3000);}
+
+// ===== INIT =====
+mutado=localStorage.getItem(KEY_MUTE)==='1';
+document.getElementById('som-btn').textContent=mutado?'🔕':'🔔';
+document.getElementById('data-atual').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long',year:'numeric'});
+updateCards();
+</script>
+</body>
+</html>
+
+
