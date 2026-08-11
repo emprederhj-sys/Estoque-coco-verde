@@ -410,28 +410,33 @@ var cgal=document.getElementById('canvas-galeria'),ctxG=cgal.getContext('2d');
 var ccam=document.getElementById('canvas-cam'),ctxC=ccam.getContext('2d');
 var video=document.getElementById('video-cam');
 
-function load(){try{return JSON.parse(localStorage.getItem(KEY))||[];}catch(e){return[];}}
-function save(d){localStorage.setItem(KEY,JSON.stringify(d));}
-function loadMetas(){try{return JSON.parse(localStorage.getItem(KM))||[];}catch(e){return[];}}
-function saveMetas(m){localStorage.setItem(KM,JSON.stringify(m));}
-function getMin(){return parseInt(localStorage.getItem(KMIN))||50;}
+var movimentacoesCache=[],metasCache=[],configCache={preco_compra:0,preco_venda:0,whatsapp_numero:'',estoque_minimo:50};
+
+async function api(caminho,opcoes){opcoes=opcoes||{};var res=await fetch(caminho,Object.assign({credentials:'include'},opcoes,{headers:Object.assign({'Content-Type':'application/json'},opcoes.headers||{})}));var body=null;if(res.status!==204)body=await res.json().catch(function(){return null;});if(!res.ok){var msg=(body&&body.errors&&body.errors.join(', '))||('Erro '+res.status);throw new Error(msg);}return body;}
+
+function mapMovimentacao(row){var dt=new Date(row.criado_em.replace(' ','T'));return{id:row.id,tipo:row.tipo,qtd:row.quantidade,detalhe:row.detalhe,obs:row.observacao,usuario:row.usuario,data:dt.toLocaleString('pt-BR'),ts:dt.getTime()};}
+function mapMeta(row){return{id:row.id,nome:row.nome,qtd:row.quantidade};}
+
+async function carregarDados(){var resultados=await Promise.all([api('/api/movimentacoes'),api('/api/metas'),api('/api/config')]);movimentacoesCache=resultados[0].map(mapMovimentacao);metasCache=resultados[1].map(mapMeta);configCache=resultados[2];}
+
+function load(){return movimentacoesCache;}
+function save(d){movimentacoesCache=d;}
+function loadMetas(){return metasCache;}
+function saveMetas(m){metasCache=m;}
+function getMin(){return configCache.estoque_minimo;}
 function salvarMin(){localStorage.setItem(KMIN,parseInt(document.getElementById('min-val').value)||50);mostrarAlerta('Estoque mínimo salvo!','success',2000);}
-function getSenhaDono(){return localStorage.getItem(KSD)||'dono123';}
-function getSenhaFunc(){return localStorage.getItem(KSF)||'func123';}
-function getPC(){return parseFloat(localStorage.getItem(KPC))||0;}
-function getPV(){return parseFloat(localStorage.getItem(KPV))||0;}
-function getWA(){return localStorage.getItem(KWA)||'';}
+function getPC(){return configCache.preco_compra;}
+function getPV(){return configCache.preco_venda;}
+function getWA(){return configCache.whatsapp_numero;}
 function calcSaldo(d){return d.reduce(function(a,r){return a+(r.tipo==='entrada'?r.qtd:-r.qtd);},0);}
 function calcIn(d){return d.filter(function(r){return r.tipo==='entrada';}).reduce(function(a,r){return a+r.qtd;},0);}
 function calcOut(d){return d.filter(function(r){return r.tipo==='saida';}).reduce(function(a,r){return a+r.qtd;},0);}
 
 var perfil='Dono';
 function selecionarPerfil(p){perfil=p;document.getElementById('rbtn-dono').className='role-btn'+(p==='Dono'?' sel':'');document.getElementById('rbtn-func').className='role-btn'+(p==='Funcionário'?' sel':'');}
-function entrar(){
-  var s=document.getElementById('inp-senha').value;
-  var ok=(perfil==='Dono'&&s===getSenhaDono())||(perfil==='Funcionário'&&s===getSenhaFunc());
-  if(!ok){var el=document.getElementById('login-erro');el.style.display='block';el.textContent='Senha incorreta. Tente novamente.';return;}
-  usuarioAtual=perfil;
+
+async function iniciarApp(papelApi){
+  usuarioAtual=papelApi==='dono'?'Dono':'Funcionário';
   document.getElementById('tela-login').style.display='none';
   document.getElementById('tela-app').style.display='block';
   document.getElementById('usuario-badge').textContent=usuarioAtual;
@@ -441,6 +446,7 @@ function entrar(){
   document.getElementById('config-dono-only').style.display=isFunc?'none':'';
   document.getElementById('nav-financeiro').style.display=isFunc?'none':'';
   document.getElementById('bnav-financeiro').style.display=isFunc?'none':'';
+  await carregarDados();
   var pc=getPC(),pv=getPV();
   if(pc)document.getElementById('preco-compra').value=pc;
   if(pv)document.getElementById('preco-venda').value=pv;
@@ -451,7 +457,35 @@ function entrar(){
   document.getElementById('som-btn').textContent=mutado?'🔕':'🔔';
   updateCards();calcFinanceiro();
 }
-function sair(){document.getElementById('tela-app').style.display='none';document.getElementById('tela-login').style.display='block';document.getElementById('inp-senha').value='';document.getElementById('login-erro').style.display='none';if(stream){stream.getTracks().forEach(function(t){t.stop();});stream=null;}}
+
+async function entrar(){
+  var s=document.getElementById('inp-senha').value;
+  var el=document.getElementById('login-erro');
+  el.style.display='none';
+  try{
+    var body=await api('/api/auth/login',{method:'POST',body:JSON.stringify({papel:perfil==='Dono'?'dono':'funcionario',senha:s})});
+    await iniciarApp(body.papel);
+  }catch(e){
+    el.style.display='block';
+    el.textContent='Senha incorreta. Tente novamente.';
+  }
+}
+
+async function sair(){
+  try{await api('/api/auth/logout',{method:'POST'});}catch(e){}
+  document.getElementById('tela-app').style.display='none';
+  document.getElementById('tela-login').style.display='block';
+  document.getElementById('inp-senha').value='';
+  document.getElementById('login-erro').style.display='none';
+  if(stream){stream.getTracks().forEach(function(t){t.stop();});stream=null;}
+}
+
+(function restaurarSessao(){
+  api('/api/auth/me').then(function(body){
+    perfil=body.papel==='dono'?'Dono':'Funcionário';
+    return iniciarApp(body.papel);
+  }).catch(function(){});
+})();
 function salvarSenhas(){if(usuarioAtual!=='Dono'){mostrarAlerta('Apenas o Dono pode alterar senhas.','danger',3000);return;}var sd=document.getElementById('nova-senha-dono').value,sf=document.getElementById('nova-senha-func').value;if(sd&&sd.length>=4)localStorage.setItem(KSD,sd);if(sf&&sf.length>=4)localStorage.setItem(KSF,sf);mostrarAlerta('Senhas atualizadas!','success',2500);document.getElementById('nova-senha-dono').value='';document.getElementById('nova-senha-func').value='';}
 function toggleMute(){mutado=!mutado;localStorage.setItem(KMUTE,mutado?'1':'0');document.getElementById('som-btn').textContent=mutado?'🔕':'🔔';mostrarAlerta(mutado?'Som silenciado':'Som reativado',mutado?'warning':'success',2000);}
 
