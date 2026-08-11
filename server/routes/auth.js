@@ -1,6 +1,17 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const { validarLogin } = require('../validation');
+const {
+  criarSessao,
+  apagarSessao,
+  setSessionCookie,
+  clearSessionCookie,
+  parseCookies,
+  COOKIE_NAME,
+  requireAuth,
+} = require('../middleware/auth');
+
+const SESSION_TTL_HOURS = Number(process.env.SESSION_TTL_HOURS) || 168;
 
 function authRouter(db) {
   const router = express.Router();
@@ -19,7 +30,20 @@ function authRouter(db) {
       return;
     }
 
+    const token = criarSessao(db, papel, SESSION_TTL_HOURS);
+    setSessionCookie(res, token, SESSION_TTL_HOURS);
     res.status(200).json({ papel });
+  });
+
+  router.get('/me', requireAuth(db), (req, res) => {
+    res.status(200).json({ papel: req.papel });
+  });
+
+  router.post('/logout', (req, res) => {
+    const cookies = parseCookies(req.headers.cookie);
+    apagarSessao(db, cookies[COOKIE_NAME]);
+    clearSessionCookie(res);
+    res.status(200).json({ ok: true });
   });
 
   return router;

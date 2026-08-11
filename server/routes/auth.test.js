@@ -58,3 +58,70 @@ test('POST /api/auth/login com papel invalido retorna 400', async () => {
     server.close();
   }
 });
+
+test('POST /api/auth/login com sucesso seta cookie de sessao', async () => {
+  const { server, baseUrl } = await startTestServer();
+  try {
+    const res = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ papel: 'dono', senha: 'dono123' }),
+    });
+    const setCookie = res.headers.get('set-cookie');
+    assert.ok(setCookie && setCookie.startsWith('sid='));
+  } finally {
+    server.close();
+  }
+});
+
+test('GET /api/auth/me com cookie valido retorna o papel', async () => {
+  const { server, baseUrl } = await startTestServer();
+  try {
+    const loginRes = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ papel: 'dono', senha: 'dono123' }),
+    });
+    const cookie = loginRes.headers.get('set-cookie').split(';')[0];
+
+    const meRes = await fetch(`${baseUrl}/api/auth/me`, { headers: { Cookie: cookie } });
+    assert.strictEqual(meRes.status, 200);
+    const body = await meRes.json();
+    assert.strictEqual(body.papel, 'dono');
+  } finally {
+    server.close();
+  }
+});
+
+test('GET /api/auth/me sem cookie retorna 401', async () => {
+  const { server, baseUrl } = await startTestServer();
+  try {
+    const res = await fetch(`${baseUrl}/api/auth/me`);
+    assert.strictEqual(res.status, 401);
+  } finally {
+    server.close();
+  }
+});
+
+test('POST /api/auth/logout limpa a sessao', async () => {
+  const { server, baseUrl } = await startTestServer();
+  try {
+    const loginRes = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ papel: 'dono', senha: 'dono123' }),
+    });
+    const cookie = loginRes.headers.get('set-cookie').split(';')[0];
+
+    const logoutRes = await fetch(`${baseUrl}/api/auth/logout`, {
+      method: 'POST',
+      headers: { Cookie: cookie },
+    });
+    assert.strictEqual(logoutRes.status, 200);
+
+    const meRes = await fetch(`${baseUrl}/api/auth/me`, { headers: { Cookie: cookie } });
+    assert.strictEqual(meRes.status, 401);
+  } finally {
+    server.close();
+  }
+});
