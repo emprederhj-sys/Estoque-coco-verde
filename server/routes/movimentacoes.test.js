@@ -86,6 +86,47 @@ test('POST /api/movimentacoes com dados validos grava e GET retorna a movimentac
   }
 });
 
+test('POST /api/movimentacoes com usuario forjado grava o papel autenticado, nao o valor enviado', async () => {
+  const { server, baseUrl } = await startTestServer();
+  try {
+    const cookie = await login(baseUrl, 'funcionario', 'func123');
+    const postRes = await fetch(`${baseUrl}/api/movimentacoes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: cookie },
+      body: JSON.stringify({ tipo: 'entrada', quantidade: 5, usuario: 'Dono' }),
+    });
+    assert.strictEqual(postRes.status, 201);
+    const row = await postRes.json();
+    assert.strictEqual(row.usuario, 'Funcionário');
+  } finally {
+    server.close();
+  }
+});
+
+test('PUT /api/movimentacoes/:id com usuario forjado grava o papel autenticado, nao o valor enviado', async () => {
+  const { server, baseUrl } = await startTestServer();
+  try {
+    const cookie = await login(baseUrl, 'dono', 'dono123');
+    const postRes = await fetch(`${baseUrl}/api/movimentacoes`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Cookie: cookie },
+      body: JSON.stringify({ tipo: 'entrada', quantidade: 10 }),
+    });
+    const { id } = await postRes.json();
+
+    const putRes = await fetch(`${baseUrl}/api/movimentacoes/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Cookie: cookie },
+      body: JSON.stringify({ tipo: 'entrada', quantidade: 10, usuario: 'Funcionário' }),
+    });
+    assert.strictEqual(putRes.status, 200);
+    const row = await putRes.json();
+    assert.strictEqual(row.usuario, 'Dono');
+  } finally {
+    server.close();
+  }
+});
+
 test('PUT /api/movimentacoes/:id como funcionario retorna 403', async () => {
   const { server, baseUrl } = await startTestServer();
   try {

@@ -17,12 +17,13 @@ function movimentacoesRouter(db) {
       return;
     }
 
-    const { tipo, quantidade, detalhe, observacao, usuario } = result.data;
+    const { tipo, quantidade, detalhe, observacao } = result.data;
+    const usuarioReal = req.papel === 'dono' ? 'Dono' : 'Funcionário';
     const info = db
       .prepare(
         'INSERT INTO movimentacoes (tipo, quantidade, detalhe, observacao, usuario) VALUES (?, ?, ?, ?, ?)'
       )
-      .run(tipo, quantidade, detalhe, observacao, usuario);
+      .run(tipo, quantidade, detalhe, observacao, usuarioReal);
 
     const row = db.prepare('SELECT * FROM movimentacoes WHERE id = ?').get(info.lastInsertRowid);
     res.status(201).json(row);
@@ -41,10 +42,11 @@ function movimentacoesRouter(db) {
       return;
     }
 
-    const { tipo, quantidade, detalhe, observacao, usuario } = result.data;
+    const { tipo, quantidade, detalhe, observacao } = result.data;
+    const usuarioReal = req.papel === 'dono' ? 'Dono' : 'Funcionário';
     db.prepare(
       'UPDATE movimentacoes SET tipo = ?, quantidade = ?, detalhe = ?, observacao = ?, usuario = ? WHERE id = ?'
-    ).run(tipo, quantidade, detalhe, observacao, usuario, req.params.id);
+    ).run(tipo, quantidade, detalhe, observacao, usuarioReal, req.params.id);
 
     const row = db.prepare('SELECT * FROM movimentacoes WHERE id = ?').get(req.params.id);
     res.status(200).json(row);

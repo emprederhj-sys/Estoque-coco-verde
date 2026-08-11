@@ -1,16 +1,17 @@
 const express = require('express');
 const path = require('node:path');
 const { createDb } = require('./db');
-const movimentacoesRouter = require('./routes/movimentacoes');
-const authRouter = require('./routes/auth');
-const metasRouter = require('./routes/metas');
-const configRouter = require('./routes/config');
 
 try {
   process.loadEnvFile(path.join(__dirname, '..', '.env'));
 } catch (err) {
   if (err.code !== 'ENOENT') throw err;
 }
+
+const movimentacoesRouter = require('./routes/movimentacoes');
+const authRouter = require('./routes/auth');
+const metasRouter = require('./routes/metas');
+const configRouter = require('./routes/config');
 
 function createApp(db) {
   const app = express();
