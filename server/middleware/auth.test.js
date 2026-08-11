@@ -1,12 +1,13 @@
 const { test } = require('node:test');
 const assert = require('node:assert');
 const { createDb } = require('../db');
-const { criarSessao, apagarSessao, requireAuth, requireDono } = require('./auth');
+const { criarSessao, apagarSessao, requireAuth, requireDono, setSessionCookie, clearSessionCookie } = require('./auth');
 
 function mockRes() {
   return {
     statusCode: null,
     body: null,
+    headers: {},
     status(code) {
       this.statusCode = code;
       return this;
@@ -15,7 +16,9 @@ function mockRes() {
       this.body = payload;
       return this;
     },
-    setHeader() {},
+    setHeader(name, value) {
+      this.headers[name] = value;
+    },
   };
 }
 
@@ -89,4 +92,35 @@ test('requireDono chama next para dono', () => {
     called = true;
   });
   assert.strictEqual(called, true);
+});
+
+test('setSessionCookie escreve HttpOnly, SameSite=Lax e Max-Age no cookie', () => {
+  const res = mockRes();
+  setSessionCookie(res, 'abc123', 1);
+  const cookie = res.headers['Set-Cookie'];
+  assert.ok(cookie.startsWith('sid=abc123;'));
+  assert.ok(cookie.includes('HttpOnly'));
+  assert.ok(cookie.includes('SameSite=Lax'));
+  assert.ok(cookie.includes('Max-Age=3600'));
+  assert.ok(!cookie.includes('Secure'));
+});
+
+test('setSessionCookie inclui Secure quando NODE_ENV=production', () => {
+  const originalEnv = process.env.NODE_ENV;
+  process.env.NODE_ENV = 'production';
+  try {
+    const res = mockRes();
+    setSessionCookie(res, 'abc123', 1);
+    assert.ok(res.headers['Set-Cookie'].includes('Secure'));
+  } finally {
+    process.env.NODE_ENV = originalEnv;
+  }
+});
+
+test('clearSessionCookie zera o cookie com Max-Age=0', () => {
+  const res = mockRes();
+  clearSessionCookie(res);
+  const cookie = res.headers['Set-Cookie'];
+  assert.ok(cookie.startsWith('sid=;'));
+  assert.ok(cookie.includes('Max-Age=0'));
 });
