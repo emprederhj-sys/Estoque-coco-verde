@@ -35,8 +35,13 @@ além de edição/exclusão de movimentações e configuração via `.env`.
 - `PUT /api/movimentacoes/:id` e `DELETE /api/movimentacoes/:id`
   (dono-only).
 - Tabela e rotas `metas` (`GET`/`POST`/`DELETE`, qualquer papel logado).
-- Tabela e rotas `config` (`GET`/`PUT`, dono-only): `preco_compra`,
-  `preco_venda`, `whatsapp_numero`, `estoque_minimo`.
+- Tabela e rotas `config`: `preco_compra`, `preco_venda`,
+  `whatsapp_numero`, `estoque_minimo`. `GET` é para qualquer papel
+  logado; a escrita é dividida em duas rotas por sensibilidade —
+  `PUT /api/config/precos` (dono-only, espelha a aba "Financeiro", hoje
+  escondida do Funcionário) e `PUT /api/config/alertas` (qualquer papel
+  logado, espelha as abas "WhatsApp" e "Metas", visíveis para os dois
+  papéis hoje).
 - Front-end (`public/index.html`) trocando leitura/escrita de
   `localStorage` por chamadas à API, usando um cache em memória (ver
   seção "Estratégia de integração no front-end").
@@ -132,14 +137,16 @@ semeada hoje.
 | `/api/metas` | GET | logado | novo |
 | `/api/metas` | POST | logado | novo |
 | `/api/metas/:id` | DELETE | logado | novo |
-| `/api/config` | GET | dono | novo |
-| `/api/config` | PUT | dono | novo |
+| `/api/config` | GET | logado | novo |
+| `/api/config/precos` | PUT | dono | novo — `preco_compra`, `preco_venda` |
+| `/api/config/alertas` | PUT | logado | novo — `whatsapp_numero`, `estoque_minimo` |
 
 Validações novas em `server/validation.js`: `validarMeta(body)` (`nome`
 string não vazia até 100 chars, `quantidade` inteiro positivo),
-`validarConfig(body)` (`preco_compra`/`preco_venda` números positivos,
-`whatsapp_numero` string de dígitos, `estoque_minimo` inteiro positivo).
-`PUT /movimentacoes/:id` reaproveita `validarMovimentacao`.
+`validarConfigPrecos(body)` (`preco_compra`/`preco_venda` números
+positivos), `validarConfigAlertas(body)` (`whatsapp_numero` string de
+dígitos, `estoque_minimo` inteiro positivo). `PUT /movimentacoes/:id`
+reaproveita `validarMovimentacao`.
 
 ## Estratégia de integração no front-end
 
@@ -239,9 +246,10 @@ arquivo `*.test.js` por módulo, testes escritos antes da implementação
   sessão retornam `401`; `PUT`/`DELETE` como funcionário retornam
   `403`; como dono, editam/excluem corretamente.
 - `server/routes/metas.test.js` (novo): CRUD básico, sem sessão `401`.
-- `server/routes/config.test.js` (novo): `GET`/`PUT` como funcionário
-  retornam `403`; como dono, `PUT` grava e `GET` reflete os novos
-  valores.
+- `server/routes/config.test.js` (novo): `GET` funciona para qualquer
+  papel logado; `PUT /precos` como funcionário retorna `403`, como dono
+  grava e `GET` reflete; `PUT /alertas` funciona para qualquer papel
+  logado e `GET` reflete os novos valores.
 
 Verificação manual (equivalente à da etapa anterior, com `curl`):
 login grava cookie, refresh de sessão via `/me`, movimentação
