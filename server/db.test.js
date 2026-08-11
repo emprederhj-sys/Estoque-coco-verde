@@ -17,6 +17,7 @@ test('createDb cria as tabelas movimentacoes e usuarios', () => {
   assert.ok(tabelas.includes('movimentacoes'));
   assert.ok(tabelas.includes('usuarios'));
   assert.ok(tabelas.includes('sessoes'));
+  assert.ok(tabelas.includes('metas'));
 });
 
 test('createDb semeia dono e funcionario com senha hasheada', () => {

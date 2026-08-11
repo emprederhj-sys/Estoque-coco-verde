@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert');
-const { validarMovimentacao, validarLogin, validarSenha } = require('./validation');
+const { validarMovimentacao, validarLogin, validarSenha, validarMeta } = require('./validation');
 
 test('validarMovimentacao aceita dados validos e sanitiza texto', () => {
   const result = validarMovimentacao({
@@ -73,4 +73,22 @@ test('validarSenha aceita papel e senha validos', () => {
     errors: [],
     data: { papel: 'funcionario', novaSenha: 'nova1234' },
   });
+});
+
+test('validarMeta aceita nome e quantidade validos', () => {
+  const result = validarMeta({ nome: '  Meta 500  ', quantidade: '500' });
+  assert.deepStrictEqual(result, {
+    valid: true,
+    errors: [],
+    data: { nome: 'Meta 500', quantidade: 500 },
+  });
+});
+
+test('validarMeta rejeita nome vazio', () => {
+  assert.strictEqual(validarMeta({ nome: '  ', quantidade: 10 }).valid, false);
+});
+
+test('validarMeta rejeita quantidade zero ou negativa', () => {
+  assert.strictEqual(validarMeta({ nome: 'Meta', quantidade: 0 }).valid, false);
+  assert.strictEqual(validarMeta({ nome: 'Meta', quantidade: -5 }).valid, false);
 });

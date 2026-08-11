@@ -72,4 +72,25 @@ function validarSenha(body) {
   return { valid: true, errors: [], data: { papel: body.papel, novaSenha: body.novaSenha } };
 }
 
-module.exports = { validarMovimentacao, validarLogin, validarSenha };
+function validarMeta(body) {
+  body = body || {};
+  const errors = [];
+
+  const nome = typeof body.nome === 'string' ? body.nome.trim() : '';
+  if (!nome || nome.length > 100) {
+    errors.push('nome e obrigatorio e deve ter ate 100 caracteres');
+  }
+
+  const quantidade = Number(body.quantidade);
+  if (!Number.isInteger(quantidade) || quantidade <= 0) {
+    errors.push('quantidade deve ser um numero inteiro positivo');
+  }
+
+  if (errors.length > 0) {
+    return { valid: false, errors };
+  }
+
+  return { valid: true, errors: [], data: { nome, quantidade } };
+}
+
+module.exports = { validarMovimentacao, validarLogin, validarSenha, validarMeta };

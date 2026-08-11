@@ -26,6 +26,12 @@ CREATE TABLE IF NOT EXISTS sessoes (
   criado_em TEXT NOT NULL DEFAULT (datetime('now','localtime')),
   expira_em TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS metas (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  nome TEXT NOT NULL,
+  quantidade INTEGER NOT NULL CHECK(quantidade > 0)
+);
 `;
 
 const SENHAS_PADRAO = {

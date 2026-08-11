@@ -3,6 +3,7 @@ const path = require('node:path');
 const { createDb } = require('./db');
 const movimentacoesRouter = require('./routes/movimentacoes');
 const authRouter = require('./routes/auth');
+const metasRouter = require('./routes/metas');
 
 function createApp(db) {
   const app = express();
@@ -10,6 +11,7 @@ function createApp(db) {
   app.use(express.static(path.join(__dirname, '..', 'public')));
   app.use('/api/movimentacoes', movimentacoesRouter(db));
   app.use('/api/auth', authRouter(db));
+  app.use('/api/metas', metasRouter(db));
   return app;
 }
 
