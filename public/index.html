@@ -446,16 +446,20 @@ async function iniciarApp(papelApi){
   document.getElementById('config-dono-only').style.display=isFunc?'none':'';
   document.getElementById('nav-financeiro').style.display=isFunc?'none':'';
   document.getElementById('bnav-financeiro').style.display=isFunc?'none':'';
-  await carregarDados();
-  var pc=getPC(),pv=getPV();
-  if(pc)document.getElementById('preco-compra').value=pc;
-  if(pv)document.getElementById('preco-venda').value=pv;
-  var wa=getWA();if(wa)document.getElementById('wa-numero').value=wa;
-  document.getElementById('min-val').value=getMin();
-  document.getElementById('wa-limite').value=getMin();
-  mutado=localStorage.getItem(KMUTE)==='1';
-  document.getElementById('som-btn').textContent=mutado?'🔕':'🔔';
-  updateCards();calcFinanceiro();
+  try{
+    await carregarDados();
+    var pc=getPC(),pv=getPV();
+    if(pc)document.getElementById('preco-compra').value=pc;
+    if(pv)document.getElementById('preco-venda').value=pv;
+    var wa=getWA();if(wa)document.getElementById('wa-numero').value=wa;
+    document.getElementById('min-val').value=getMin();
+    document.getElementById('wa-limite').value=getMin();
+    mutado=localStorage.getItem(KMUTE)==='1';
+    document.getElementById('som-btn').textContent=mutado?'🔕':'🔔';
+    updateCards();calcFinanceiro();
+  }catch(e){
+    mostrarAlerta('Erro ao carregar dados. Recarregue a página.','danger',6000);
+  }
 }
 
 async function entrar(){
