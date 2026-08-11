@@ -120,7 +120,7 @@ function validarConfigAlertas(body) {
 
   const whatsappNumero =
     typeof body.whatsapp_numero === 'string' ? body.whatsapp_numero.replace(/\D/g, '') : '';
-  if (whatsappNumero.length < 10) {
+  if (whatsappNumero.length > 0 && whatsappNumero.length < 10) {
     errors.push('whatsapp_numero deve ter ao menos 10 digitos (DDD + numero)');
   }
 
