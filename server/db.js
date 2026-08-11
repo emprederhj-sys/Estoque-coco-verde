@@ -19,6 +19,13 @@ CREATE TABLE IF NOT EXISTS usuarios (
   papel TEXT NOT NULL UNIQUE CHECK(papel IN ('dono','funcionario')),
   senha_hash TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS sessoes (
+  token TEXT PRIMARY KEY,
+  papel TEXT NOT NULL CHECK(papel IN ('dono','funcionario')),
+  criado_em TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+  expira_em TEXT NOT NULL
+);
 `;
 
 const SENHAS_PADRAO = {
