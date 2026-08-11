@@ -1,6 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
-const { validarLogin } = require('../validation');
+const { validarLogin, validarSenha } = require('../validation');
 const {
   criarSessao,
   apagarSessao,
@@ -9,6 +9,7 @@ const {
   parseCookies,
   COOKIE_NAME,
   requireAuth,
+  requireDono,
 } = require('../middleware/auth');
 
 const SESSION_TTL_HOURS = Number(process.env.SESSION_TTL_HOURS) || 168;
@@ -44,6 +45,19 @@ function authRouter(db) {
     apagarSessao(db, cookies[COOKIE_NAME]);
     clearSessionCookie(res);
     res.status(200).json({ ok: true });
+  });
+
+  router.put('/senha', requireDono(db), (req, res) => {
+    const result = validarSenha(req.body);
+    if (!result.valid) {
+      res.status(400).json({ errors: result.errors });
+      return;
+    }
+
+    const { papel, novaSenha } = result.data;
+    const hash = bcrypt.hashSync(novaSenha, 10);
+    db.prepare('UPDATE usuarios SET senha_hash = ? WHERE papel = ?').run(hash, papel);
+    res.status(200).json({ papel });
   });
 
   return router;

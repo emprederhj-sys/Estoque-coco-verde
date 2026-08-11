@@ -1,6 +1,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert');
-const { validarMovimentacao, validarLogin } = require('./validation');
+const { validarMovimentacao, validarLogin, validarSenha } = require('./validation');
 
 test('validarMovimentacao aceita dados validos e sanitiza texto', () => {
   const result = validarMovimentacao({
@@ -53,5 +53,24 @@ test('validarLogin aceita papel e senha validos', () => {
     valid: true,
     errors: [],
     data: { papel: 'dono', senha: 'dono123' },
+  });
+});
+
+test('validarSenha rejeita papel invalido', () => {
+  const result = validarSenha({ papel: 'admin', novaSenha: '1234' });
+  assert.strictEqual(result.valid, false);
+});
+
+test('validarSenha rejeita senha curta', () => {
+  const result = validarSenha({ papel: 'dono', novaSenha: '123' });
+  assert.strictEqual(result.valid, false);
+});
+
+test('validarSenha aceita papel e senha validos', () => {
+  const result = validarSenha({ papel: 'funcionario', novaSenha: 'nova1234' });
+  assert.deepStrictEqual(result, {
+    valid: true,
+    errors: [],
+    data: { papel: 'funcionario', novaSenha: 'nova1234' },
   });
 });

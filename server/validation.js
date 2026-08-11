@@ -54,4 +54,22 @@ function validarLogin(body) {
   return { valid: true, errors: [], data: { papel: body.papel, senha: body.senha } };
 }
 
-module.exports = { validarMovimentacao, validarLogin };
+function validarSenha(body) {
+  body = body || {};
+  const errors = [];
+
+  if (!PAPEIS_VALIDOS.includes(body.papel)) {
+    errors.push(`papel deve ser um de: ${PAPEIS_VALIDOS.join(', ')}`);
+  }
+  if (typeof body.novaSenha !== 'string' || body.novaSenha.length < 4) {
+    errors.push('novaSenha deve ter pelo menos 4 caracteres');
+  }
+
+  if (errors.length > 0) {
+    return { valid: false, errors };
+  }
+
+  return { valid: true, errors: [], data: { papel: body.papel, novaSenha: body.novaSenha } };
+}
+
+module.exports = { validarMovimentacao, validarLogin, validarSenha };

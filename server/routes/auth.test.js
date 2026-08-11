@@ -125,3 +125,52 @@ test('POST /api/auth/logout limpa a sessao', async () => {
     server.close();
   }
 });
+
+test('PUT /api/auth/senha sem ser dono retorna 403', async () => {
+  const { server, baseUrl } = await startTestServer();
+  try {
+    const loginRes = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ papel: 'funcionario', senha: 'func123' }),
+    });
+    const cookie = loginRes.headers.get('set-cookie').split(';')[0];
+
+    const res = await fetch(`${baseUrl}/api/auth/senha`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Cookie: cookie },
+      body: JSON.stringify({ papel: 'dono', novaSenha: 'novaSenha1' }),
+    });
+    assert.strictEqual(res.status, 403);
+  } finally {
+    server.close();
+  }
+});
+
+test('PUT /api/auth/senha como dono regrava o hash e o novo login funciona', async () => {
+  const { server, baseUrl } = await startTestServer();
+  try {
+    const loginRes = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ papel: 'dono', senha: 'dono123' }),
+    });
+    const cookie = loginRes.headers.get('set-cookie').split(';')[0];
+
+    const res = await fetch(`${baseUrl}/api/auth/senha`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Cookie: cookie },
+      body: JSON.stringify({ papel: 'funcionario', novaSenha: 'novaSenhaFunc' }),
+    });
+    assert.strictEqual(res.status, 200);
+
+    const novoLogin = await fetch(`${baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ papel: 'funcionario', senha: 'novaSenhaFunc' }),
+    });
+    assert.strictEqual(novoLogin.status, 200);
+  } finally {
+    server.close();
+  }
+});
