@@ -93,4 +93,58 @@ function validarMeta(body) {
   return { valid: true, errors: [], data: { nome, quantidade } };
 }
 
-module.exports = { validarMovimentacao, validarLogin, validarSenha, validarMeta };
+function validarConfigPrecos(body) {
+  body = body || {};
+  const errors = [];
+
+  const precoCompra = Number(body.preco_compra);
+  if (!Number.isFinite(precoCompra) || precoCompra <= 0) {
+    errors.push('preco_compra deve ser um numero positivo');
+  }
+
+  const precoVenda = Number(body.preco_venda);
+  if (!Number.isFinite(precoVenda) || precoVenda <= 0) {
+    errors.push('preco_venda deve ser um numero positivo');
+  }
+
+  if (errors.length > 0) {
+    return { valid: false, errors };
+  }
+
+  return { valid: true, errors: [], data: { preco_compra: precoCompra, preco_venda: precoVenda } };
+}
+
+function validarConfigAlertas(body) {
+  body = body || {};
+  const errors = [];
+
+  const whatsappNumero =
+    typeof body.whatsapp_numero === 'string' ? body.whatsapp_numero.replace(/\D/g, '') : '';
+  if (whatsappNumero.length < 10) {
+    errors.push('whatsapp_numero deve ter ao menos 10 digitos (DDD + numero)');
+  }
+
+  const estoqueMinimo = Number(body.estoque_minimo);
+  if (!Number.isInteger(estoqueMinimo) || estoqueMinimo <= 0) {
+    errors.push('estoque_minimo deve ser um numero inteiro positivo');
+  }
+
+  if (errors.length > 0) {
+    return { valid: false, errors };
+  }
+
+  return {
+    valid: true,
+    errors: [],
+    data: { whatsapp_numero: whatsappNumero, estoque_minimo: estoqueMinimo },
+  };
+}
+
+module.exports = {
+  validarMovimentacao,
+  validarLogin,
+  validarSenha,
+  validarMeta,
+  validarConfigPrecos,
+  validarConfigAlertas,
+};

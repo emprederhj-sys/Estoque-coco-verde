@@ -1,6 +1,13 @@
 const { test } = require('node:test');
 const assert = require('node:assert');
-const { validarMovimentacao, validarLogin, validarSenha, validarMeta } = require('./validation');
+const {
+  validarMovimentacao,
+  validarLogin,
+  validarSenha,
+  validarMeta,
+  validarConfigPrecos,
+  validarConfigAlertas,
+} = require('./validation');
 
 test('validarMovimentacao aceita dados validos e sanitiza texto', () => {
   const result = validarMovimentacao({
@@ -91,4 +98,38 @@ test('validarMeta rejeita nome vazio', () => {
 test('validarMeta rejeita quantidade zero ou negativa', () => {
   assert.strictEqual(validarMeta({ nome: 'Meta', quantidade: 0 }).valid, false);
   assert.strictEqual(validarMeta({ nome: 'Meta', quantidade: -5 }).valid, false);
+});
+
+test('validarConfigPrecos aceita numeros positivos', () => {
+  const result = validarConfigPrecos({ preco_compra: '2.5', preco_venda: '4' });
+  assert.deepStrictEqual(result, {
+    valid: true,
+    errors: [],
+    data: { preco_compra: 2.5, preco_venda: 4 },
+  });
+});
+
+test('validarConfigPrecos rejeita preco zero ou negativo', () => {
+  assert.strictEqual(validarConfigPrecos({ preco_compra: 0, preco_venda: 4 }).valid, false);
+  assert.strictEqual(validarConfigPrecos({ preco_compra: 2, preco_venda: -1 }).valid, false);
+});
+
+test('validarConfigAlertas aceita numero e estoque minimo validos', () => {
+  const result = validarConfigAlertas({ whatsapp_numero: '(62) 99999-8888', estoque_minimo: '30' });
+  assert.deepStrictEqual(result, {
+    valid: true,
+    errors: [],
+    data: { whatsapp_numero: '62999998888', estoque_minimo: 30 },
+  });
+});
+
+test('validarConfigAlertas rejeita numero curto demais', () => {
+  assert.strictEqual(validarConfigAlertas({ whatsapp_numero: '123', estoque_minimo: 30 }).valid, false);
+});
+
+test('validarConfigAlertas rejeita estoque minimo zero ou negativo', () => {
+  assert.strictEqual(
+    validarConfigAlertas({ whatsapp_numero: '62999998888', estoque_minimo: 0 }).valid,
+    false
+  );
 });

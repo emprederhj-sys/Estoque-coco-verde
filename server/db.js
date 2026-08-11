@@ -32,6 +32,14 @@ CREATE TABLE IF NOT EXISTS metas (
   nome TEXT NOT NULL,
   quantidade INTEGER NOT NULL CHECK(quantidade > 0)
 );
+
+CREATE TABLE IF NOT EXISTS config (
+  id INTEGER PRIMARY KEY CHECK(id = 1),
+  preco_compra REAL NOT NULL DEFAULT 0,
+  preco_venda REAL NOT NULL DEFAULT 0,
+  whatsapp_numero TEXT NOT NULL DEFAULT '',
+  estoque_minimo INTEGER NOT NULL DEFAULT 50
+);
 `;
 
 const SENHAS_PADRAO = {
@@ -49,6 +57,15 @@ function seedUsuarios(db) {
   }
 }
 
+function seedConfig(db) {
+  const { c } = db.prepare('SELECT COUNT(*) as c FROM config').get();
+  if (c > 0) return;
+
+  db.prepare(
+    "INSERT INTO config (id, preco_compra, preco_venda, whatsapp_numero, estoque_minimo) VALUES (1, 0, 0, '', 50)"
+  ).run();
+}
+
 function createDb(dbPath) {
   if (dbPath !== ':memory:') {
     fs.mkdirSync(path.dirname(dbPath), { recursive: true });
@@ -56,6 +73,7 @@ function createDb(dbPath) {
   const db = new DatabaseSync(dbPath);
   db.exec(SCHEMA);
   seedUsuarios(db);
+  seedConfig(db);
   return db;
 }
 

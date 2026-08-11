@@ -18,6 +18,17 @@ test('createDb cria as tabelas movimentacoes e usuarios', () => {
   assert.ok(tabelas.includes('usuarios'));
   assert.ok(tabelas.includes('sessoes'));
   assert.ok(tabelas.includes('metas'));
+  assert.ok(tabelas.includes('config'));
+});
+
+test('createDb semeia a linha unica de config com os defaults', () => {
+  const db = createDb(':memory:');
+  const config = db.prepare('SELECT * FROM config WHERE id = 1').get();
+  assert.ok(config, 'linha de config deveria existir');
+  assert.strictEqual(config.preco_compra, 0);
+  assert.strictEqual(config.preco_venda, 0);
+  assert.strictEqual(config.whatsapp_numero, '');
+  assert.strictEqual(config.estoque_minimo, 50);
 });
 
 test('createDb semeia dono e funcionario com senha hasheada', () => {

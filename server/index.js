@@ -4,6 +4,7 @@ const { createDb } = require('./db');
 const movimentacoesRouter = require('./routes/movimentacoes');
 const authRouter = require('./routes/auth');
 const metasRouter = require('./routes/metas');
+const configRouter = require('./routes/config');
 
 function createApp(db) {
   const app = express();
@@ -12,6 +13,7 @@ function createApp(db) {
   app.use('/api/movimentacoes', movimentacoesRouter(db));
   app.use('/api/auth', authRouter(db));
   app.use('/api/metas', metasRouter(db));
+  app.use('/api/config', configRouter(db));
   return app;
 }
 
