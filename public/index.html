@@ -528,36 +528,10 @@ function verificarAlertas(saldo){
   loadMetas().forEach(function(m){var k=m.id+'_'+m.qtd;if(saldo>=m.qtd&&!metasAlertadas[k]){metasAlertadas[k]=true;mostrarAlerta('🎯 Meta atingida: "'+m.nome+'" — '+m.qtd+' cocos!','success',5000);}});
 }
 
-function registrar(tipo){
-  var d=load(),u=usuarioAtual;
-  if(tipo==='entrada'){
-    var q=parseInt(document.getElementById('in-qtd').value)||0,f=document.getElementById('in-forn').value.trim();
-    if(q<=0){mostrarAlerta('Informe uma quantidade válida.','danger',3000);return;}
-    d.push({tipo:'entrada',qtd:q,detalhe:f||'—',obs:document.getElementById('in-obs').value.trim(),usuario:u,data:new Date().toLocaleString('pt-BR'),ts:Date.now()});
-    document.getElementById('in-qtd').value='';document.getElementById('in-forn').value='';document.getElementById('in-obs').value='';
-    save(d);updateCards();calcFinanceiro();mostrarAlerta('✅ Entrada de '+q+' cocos registrada!','success',3000);
-  }else{
-    var q2=parseInt(document.getElementById('out-qtd').value)||0,dest=document.getElementById('out-dest').value.trim(),s=calcSaldo(d);
-    if(q2<=0){mostrarAlerta('Informe uma quantidade válida.','danger',3000);return;}
-    if(q2>s){mostrarAlerta('❌ Saldo insuficiente! Saldo: '+s+' cocos.','danger',4000);return;}
-    d.push({tipo:'saida',qtd:q2,detalhe:dest||'—',obs:document.getElementById('out-obs').value.trim(),usuario:u,data:new Date().toLocaleString('pt-BR'),ts:Date.now()});
-    document.getElementById('out-qtd').value='';document.getElementById('out-dest').value='';document.getElementById('out-obs').value='';
-    save(d);updateCards();calcFinanceiro();mostrarAlerta('✅ Saída de '+q2+' cocos registrada!','success',3000);
-  }
-}
+async function registrar(tipo){var u=usuarioAtual;if(tipo==='entrada'){var q=parseInt(document.getElementById('in-qtd').value)||0,f=document.getElementById('in-forn').value.trim();if(q<=0){mostrarAlerta('Informe uma quantidade válida.','danger',3000);return;}try{var row=await api('/api/movimentacoes',{method:'POST',body:JSON.stringify({tipo:'entrada',quantidade:q,detalhe:f||'—',observacao:document.getElementById('in-obs').value.trim(),usuario:u})});movimentacoesCache.unshift(mapMovimentacao(row));document.getElementById('in-qtd').value='';document.getElementById('in-forn').value='';document.getElementById('in-obs').value='';updateCards();calcFinanceiro();mostrarAlerta('✅ Entrada de '+q+' cocos registrada!','success',3000);}catch(e){mostrarAlerta(e.message,'danger',3000);}}else{var q2=parseInt(document.getElementById('out-qtd').value)||0,dest=document.getElementById('out-dest').value.trim(),s=calcSaldo(load());if(q2<=0){mostrarAlerta('Informe uma quantidade válida.','danger',3000);return;}if(q2>s){mostrarAlerta('❌ Saldo insuficiente! Saldo: '+s+' cocos.','danger',4000);return;}try{var row2=await api('/api/movimentacoes',{method:'POST',body:JSON.stringify({tipo:'saida',quantidade:q2,detalhe:dest||'—',observacao:document.getElementById('out-obs').value.trim(),usuario:u})});movimentacoesCache.unshift(mapMovimentacao(row2));document.getElementById('out-qtd').value='';document.getElementById('out-dest').value='';document.getElementById('out-obs').value='';updateCards();calcFinanceiro();mostrarAlerta('✅ Saída de '+q2+' cocos registrada!','success',3000);}catch(e){mostrarAlerta(e.message,'danger',3000);}}}
 
-function confirmarEntrada(origem){
-  var d=load(),u=usuarioAtual,qtd=0,forn='',obs='';
-  if(origem==='camera'){qtd=parseInt(document.getElementById('qtd-c').value)||0;forn=document.getElementById('forn-c').value.trim();obs=document.getElementById('obs-c').value.trim()||'Câmera';}
-  else if(origem==='galeria'){qtd=parseInt(document.getElementById('qtd-g').value)||0;forn=document.getElementById('forn-g').value.trim();obs=document.getElementById('obs-g').value.trim()||'Galeria/Print';}
-  else{qtd=parseInt(document.getElementById('qtd-caixas').value)||0;forn=document.getElementById('forn-caixas').value.trim();obs=document.getElementById('obs-caixas').value.trim()||'Por volumes';}
-  if(qtd<=0){mostrarAlerta('Informe uma quantidade válida.','danger',3000);return;}
-  d.push({tipo:'entrada',qtd:qtd,detalhe:forn||'—',obs:obs,usuario:u,data:new Date().toLocaleString('pt-BR'),ts:Date.now()});
-  save(d);updateCards();calcFinanceiro();mostrarAlerta('✅ '+qtd+' cocos registrados!','success',3000);
-  if(origem==='camera'){pontosC=[];linhaC=null;atualizarContadores('camera');retomarCam();document.getElementById('forn-c').value='';document.getElementById('obs-c').value='';}
-  else if(origem==='galeria'){pontosG=[];linhaG=null;if(snapG)ctxG.putImageData(snapG,0,0);atualizarContadores('galeria');document.getElementById('forn-g').value='';document.getElementById('obs-g').value='';}
-  else{document.getElementById('num-vol').value='';document.getElementById('qtd-caixas').value='';document.getElementById('forn-caixas').value='';document.getElementById('obs-caixas').value='';document.getElementById('resultado-box').style.display='none';document.getElementById('tipo-emb').value='';}
-}
+
+async function confirmarEntrada(origem){var u=usuarioAtual,qtd=0,forn='',obs='';if(origem==='camera'){qtd=parseInt(document.getElementById('qtd-c').value)||0;forn=document.getElementById('forn-c').value.trim();obs=document.getElementById('obs-c').value.trim()||'Câmera';}else if(origem==='galeria'){qtd=parseInt(document.getElementById('qtd-g').value)||0;forn=document.getElementById('forn-g').value.trim();obs=document.getElementById('obs-g').value.trim()||'Galeria/Print';}else{qtd=parseInt(document.getElementById('qtd-caixas').value)||0;forn=document.getElementById('forn-caixas').value.trim();obs=document.getElementById('obs-caixas').value.trim()||'Por volumes';}if(qtd<=0){mostrarAlerta('Informe uma quantidade válida.','danger',3000);return;}try{var row=await api('/api/movimentacoes',{method:'POST',body:JSON.stringify({tipo:'entrada',quantidade:qtd,detalhe:forn||'—',observacao:obs,usuario:u})});movimentacoesCache.unshift(mapMovimentacao(row));}catch(e){mostrarAlerta(e.message,'danger',3000);return;}updateCards();calcFinanceiro();mostrarAlerta('✅ '+qtd+' cocos registrados!','success',3000);if(origem==='camera'){pontosC=[];linhaC=null;atualizarContadores('camera');retomarCam();document.getElementById('forn-c').value='';document.getElementById('obs-c').value='';}else if(origem==='galeria'){pontosG=[];linhaG=null;if(snapG)ctxG.putImageData(snapG,0,0);atualizarContadores('galeria');document.getElementById('forn-g').value='';document.getElementById('obs-g').value='';}else{document.getElementById('num-vol').value='';document.getElementById('qtd-caixas').value='';document.getElementById('forn-caixas').value='';document.getElementById('obs-caixas').value='';document.getElementById('resultado-box').style.display='none';document.getElementById('tipo-emb').value='';}}
 
 function salvarPrecos(){var pc=parseFloat(document.getElementById('preco-compra').value)||0,pv=parseFloat(document.getElementById('preco-venda').value)||0;if(pc<=0||pv<=0){mostrarAlerta('Informe preços válidos.','danger',3000);return;}localStorage.setItem(KPC,pc);localStorage.setItem(KPV,pv);calcFinanceiro();updateCards();mostrarAlerta('Preços salvos!','success',2000);}
 function calcFinanceiro(){
@@ -603,7 +577,7 @@ function renderMetas(){var m=loadMetas(),s=calcSaldo(load()),el=document.getElem
 
 function renderHistorico(){var d=load(),f=document.getElementById('filtro').value,lista=(f==='todos'?d:d.filter(function(r){return r.tipo===f;})).slice().reverse(),tb=document.getElementById('tabela-body'),em=document.getElementById('tabela-empty');if(!lista.length){tb.innerHTML='';em.style.display='block';return;}em.style.display='none';tb.innerHTML=lista.map(function(r){return'<tr><td style="font-size:10px;white-space:nowrap">'+r.data+'</td><td><span class="badge badge-'+(r.tipo==='entrada'?'in':'out')+'">'+(r.tipo==='entrada'?'Entrada':'Saída')+'</span></td><td><strong>'+r.qtd+'</strong></td><td>'+r.detalhe+'</td><td>'+r.usuario+'</td></tr>';}).join('');}
 function exportar(){var d=load();if(!d.length){mostrarAlerta('Nenhum dado.','danger',3000);return;}var csv='Data,Tipo,Qtd,Detalhe,Obs,Usuário\n'+d.map(function(r){return['"'+r.data+'"',r.tipo,r.qtd,'"'+(r.detalhe||'')+'\"','"'+(r.obs||'')+'\"',r.usuario].join(',');}).join('\n');var a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent('\uFEFF'+csv);a.download='estoque_coco_'+new Date().toLocaleDateString('pt-BR').replace(/\//g,'-')+'.csv';a.click();}
-function limparHistorico(){if(!confirm('Limpar todo o histórico?'))return;save([]);updateCards();calcFinanceiro();if(chartMov)chartMov.destroy();if(chartSaldo)chartSaldo.destroy();mostrarAlerta('Histórico limpo.','success',3000);}
+async function limparHistorico(){if(!confirm('Limpar todo o histórico?'))return;try{var ids=movimentacoesCache.map(function(r){return r.id;});for(var i=0;i<ids.length;i++){await api('/api/movimentacoes/'+ids[i],{method:'DELETE'});}movimentacoesCache=[];updateCards();calcFinanceiro();if(chartMov)chartMov.destroy();if(chartSaldo)chartSaldo.destroy();mostrarAlerta('Histórico limpo.','success',3000);}catch(e){mostrarAlerta(e.message,'danger',3000);}}
 
 function calcularCaixas(){var tipo=document.getElementById('tipo-emb').value,num=parseInt(document.getElementById('num-vol').value)||0,grp=document.getElementById('grupo-media'),media=0;if(tipo==='custom'){grp.style.display='flex';media=parseInt(document.getElementById('media-vol').value)||0;}else{grp.style.display='none';media=parseInt(tipo)||0;}var total=num*media,rb=document.getElementById('resultado-box');if(total>0){rb.style.display='block';document.getElementById('resultado-total').textContent=total;document.getElementById('qtd-caixas').value=total;}else rb.style.display='none';}
 
