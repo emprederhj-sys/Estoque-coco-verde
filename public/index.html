@@ -401,7 +401,7 @@ td{padding:9px;border-bottom:1px solid var(--borda);color:var(--texto);vertical-
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script>
-var KEY='coco_v4',KM='coco_metas_v4',KSD='coco_sd',KSF='coco_sf',KPC='coco_pc',KPV='coco_pv',KWA='coco_wa',KMIN='coco_min',KMUTE='coco_mute';
+var KMUTE='coco_mute';
 var usuarioAtual='',alertQ=[],showingA=false,alertTimer=null,mutado=false,metasAlertadas={};
 var chartMov=null,chartSaldo=null;
 var modoG='pontos',modoC='pontos',pontosG=[],linhaG=null,snapG=null,pontosC=[],linhaC=null,snapC=null;
@@ -424,7 +424,7 @@ function save(d){movimentacoesCache=d;}
 function loadMetas(){return metasCache;}
 function saveMetas(m){metasCache=m;}
 function getMin(){return configCache.estoque_minimo;}
-function salvarMin(){localStorage.setItem(KMIN,parseInt(document.getElementById('min-val').value)||50);mostrarAlerta('Estoque mínimo salvo!','success',2000);}
+async function salvarMin(){var v=parseInt(document.getElementById('min-val').value)||50;try{configCache=await api('/api/config/alertas',{method:'PUT',body:JSON.stringify({whatsapp_numero:configCache.whatsapp_numero,estoque_minimo:v})});mostrarAlerta('Estoque mínimo salvo!','success',2000);}catch(e){mostrarAlerta(e.message,'danger',3000);}}
 function getPC(){return configCache.preco_compra;}
 function getPV(){return configCache.preco_venda;}
 function getWA(){return configCache.whatsapp_numero;}
@@ -490,7 +490,7 @@ async function sair(){
     return iniciarApp(body.papel);
   }).catch(function(){});
 })();
-function salvarSenhas(){if(usuarioAtual!=='Dono'){mostrarAlerta('Apenas o Dono pode alterar senhas.','danger',3000);return;}var sd=document.getElementById('nova-senha-dono').value,sf=document.getElementById('nova-senha-func').value;if(sd&&sd.length>=4)localStorage.setItem(KSD,sd);if(sf&&sf.length>=4)localStorage.setItem(KSF,sf);mostrarAlerta('Senhas atualizadas!','success',2500);document.getElementById('nova-senha-dono').value='';document.getElementById('nova-senha-func').value='';}
+async function salvarSenhas(){if(usuarioAtual!=='Dono'){mostrarAlerta('Apenas o Dono pode alterar senhas.','danger',3000);return;}var sd=document.getElementById('nova-senha-dono').value,sf=document.getElementById('nova-senha-func').value;try{if(sd&&sd.length>=4)await api('/api/auth/senha',{method:'PUT',body:JSON.stringify({papel:'dono',novaSenha:sd})});if(sf&&sf.length>=4)await api('/api/auth/senha',{method:'PUT',body:JSON.stringify({papel:'funcionario',novaSenha:sf})});mostrarAlerta('Senhas atualizadas!','success',2500);document.getElementById('nova-senha-dono').value='';document.getElementById('nova-senha-func').value='';}catch(e){mostrarAlerta(e.message,'danger',3000);}}
 function toggleMute(){mutado=!mutado;localStorage.setItem(KMUTE,mutado?'1':'0');document.getElementById('som-btn').textContent=mutado?'🔕':'🔔';mostrarAlerta(mutado?'Som silenciado':'Som reativado',mutado?'warning':'success',2000);}
 
 function showTab(t){
@@ -533,7 +533,7 @@ async function registrar(tipo){var u=usuarioAtual;if(tipo==='entrada'){var q=par
 
 async function confirmarEntrada(origem){var u=usuarioAtual,qtd=0,forn='',obs='';if(origem==='camera'){qtd=parseInt(document.getElementById('qtd-c').value)||0;forn=document.getElementById('forn-c').value.trim();obs=document.getElementById('obs-c').value.trim()||'Câmera';}else if(origem==='galeria'){qtd=parseInt(document.getElementById('qtd-g').value)||0;forn=document.getElementById('forn-g').value.trim();obs=document.getElementById('obs-g').value.trim()||'Galeria/Print';}else{qtd=parseInt(document.getElementById('qtd-caixas').value)||0;forn=document.getElementById('forn-caixas').value.trim();obs=document.getElementById('obs-caixas').value.trim()||'Por volumes';}if(qtd<=0){mostrarAlerta('Informe uma quantidade válida.','danger',3000);return;}try{var row=await api('/api/movimentacoes',{method:'POST',body:JSON.stringify({tipo:'entrada',quantidade:qtd,detalhe:forn||'—',observacao:obs,usuario:u})});movimentacoesCache.unshift(mapMovimentacao(row));}catch(e){mostrarAlerta(e.message,'danger',3000);return;}updateCards();calcFinanceiro();mostrarAlerta('✅ '+qtd+' cocos registrados!','success',3000);if(origem==='camera'){pontosC=[];linhaC=null;atualizarContadores('camera');retomarCam();document.getElementById('forn-c').value='';document.getElementById('obs-c').value='';}else if(origem==='galeria'){pontosG=[];linhaG=null;if(snapG)ctxG.putImageData(snapG,0,0);atualizarContadores('galeria');document.getElementById('forn-g').value='';document.getElementById('obs-g').value='';}else{document.getElementById('num-vol').value='';document.getElementById('qtd-caixas').value='';document.getElementById('forn-caixas').value='';document.getElementById('obs-caixas').value='';document.getElementById('resultado-box').style.display='none';document.getElementById('tipo-emb').value='';}}
 
-function salvarPrecos(){var pc=parseFloat(document.getElementById('preco-compra').value)||0,pv=parseFloat(document.getElementById('preco-venda').value)||0;if(pc<=0||pv<=0){mostrarAlerta('Informe preços válidos.','danger',3000);return;}localStorage.setItem(KPC,pc);localStorage.setItem(KPV,pv);calcFinanceiro();updateCards();mostrarAlerta('Preços salvos!','success',2000);}
+async function salvarPrecos(){var pc=parseFloat(document.getElementById('preco-compra').value)||0,pv=parseFloat(document.getElementById('preco-venda').value)||0;if(pc<=0||pv<=0){mostrarAlerta('Informe preços válidos.','danger',3000);return;}try{configCache=await api('/api/config/precos',{method:'PUT',body:JSON.stringify({preco_compra:pc,preco_venda:pv})});calcFinanceiro();updateCards();mostrarAlerta('Preços salvos!','success',2000);}catch(e){mostrarAlerta(e.message,'danger',3000);}}
 function calcFinanceiro(){
   var d=load(),pc=getPC(),pv=getPV(),entradas=calcIn(d),saidas=calcOut(d),saldo=calcSaldo(d);
   var investido=entradas*pc,receita=saidas*pv,lucro=receita-investido;
@@ -548,7 +548,7 @@ function calcFinanceiro(){
   document.getElementById('lucro').textContent='R$ '+lucro.toFixed(2).replace('.',',');
 }
 
-function salvarWA(){var n=document.getElementById('wa-numero').value.replace(/\D/g,''),lim=parseInt(document.getElementById('wa-limite').value)||50;if(!n||n.length<10){mostrarAlerta('Número inválido. Use DDD + número.','danger',3000);return;}localStorage.setItem(KWA,n);localStorage.setItem(KMIN,lim);document.getElementById('min-val').value=lim;mostrarAlerta('Configuração salva!','success',2000);testarMsgWA();}
+async function salvarWA(){var n=document.getElementById('wa-numero').value.replace(/\D/g,''),lim=parseInt(document.getElementById('wa-limite').value)||50;if(!n||n.length<10){mostrarAlerta('Número inválido. Use DDD + número.','danger',3000);return;}try{configCache=await api('/api/config/alertas',{method:'PUT',body:JSON.stringify({whatsapp_numero:n,estoque_minimo:lim})});document.getElementById('min-val').value=lim;mostrarAlerta('Configuração salva!','success',2000);testarMsgWA();}catch(e){mostrarAlerta(e.message,'danger',3000);}}
 function testarMsgWA(){
   var d=load(),saldo=calcSaldo(d),lim=getMin();
   var status=saldo<=0?'ESTOQUE ZERADO! Reposicao urgente.':saldo<=lim?'ESTOQUE BAIXO! Providencie reposicao.':'Estoque normal.';
