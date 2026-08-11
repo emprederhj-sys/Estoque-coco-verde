@@ -1,0 +1,19 @@
+{
+  "name": "estoque-coco-verde",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Backend para gerenciamento de entradas e saidas de estoque de coco verde",
+  "main": "server/index.js",
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "express": "^5.2.1"
+  }
+}
