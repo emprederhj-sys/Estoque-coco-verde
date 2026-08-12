@@ -505,6 +505,7 @@ function showTab(t){
   if(t==='financeiro')calcFinanceiro();
   if(t==='whatsapp')testarMsgWA();
   if(t==='metas')renderMetas();
+  if(t==='historico')renderHistorico();
   if(t!=='entrada'&&stream){stream.getTracks().forEach(function(tk){tk.stop();});stream=null;setStatus(false,'Câmera desligada');}
   window.scrollTo({top:0,behavior:'smooth'});
 }
