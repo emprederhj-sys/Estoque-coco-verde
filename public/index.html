@@ -554,7 +554,7 @@ async function salvarWA(){var n=document.getElementById('wa-numero').value.repla
 function testarMsgWA(){
   var d=load(),saldo=calcSaldo(d),lim=getMin();
   var status=saldo<=0?'ESTOQUE ZERADO! Reposicao urgente.':saldo<=lim?'ESTOQUE BAIXO! Providencie reposicao.':'Estoque normal.';
-  var msg='Ola! Alerta de Estoque - Coco Verde\n\nSaldo atual: '+saldo+' cocos\nLimite minimo: '+lim+' cocos\nStatus: '+status+'\n\nData: '+new Date().toLocaleString('pt-BR');
+  var msg='Olá! Alerta de Estoque - Coco Verde\n\nSaldo atual: '+saldo+' cocos\nLimite minimo: '+lim+' cocos\nStatus: '+status+'\n\nData: '+new Date().toLocaleString('pt-BR');
   document.getElementById('wa-preview-msg').textContent=msg;
   document.getElementById('wa-hora').textContent=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
 }
