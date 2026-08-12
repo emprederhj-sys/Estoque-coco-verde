@@ -469,12 +469,13 @@ async function entrar(){
   var s=document.getElementById('inp-senha').value;
   var el=document.getElementById('login-erro');
   el.style.display='none';
+  if(!s)return;
   try{
     var body=await api('/api/auth/login',{method:'POST',body:JSON.stringify({papel:perfil==='Dono'?'dono':'funcionario',senha:s})});
     await iniciarApp(body.papel);
   }catch(e){
     el.style.display='block';
-    el.textContent='Senha incorreta. Tente novamente.';
+    el.textContent=e.message||'Senha incorreta. Tente novamente.';
   }
 }
 
